@@ -15,36 +15,35 @@ class Network {
       );
   }
 
-  public static function ethernet() {
+  public static function ethernet($linux) {
+  if ( $linux == 'Arch Linux ARM' ){
+    $data = shell_exec("/sbin/ifconfig eth0 | grep 'RX packets'");
+    $data = str_ireplace("RX packets:", "", $data);
+    $data = trim($data);
+    $data = explode(" ", $data);
+    $rxRaw = $data[5] / 1024 / 1024;
 
-  /* before
-  $data = shell_exec("/sbin/ifconfig eth0 | grep RX\ bytes");
-  $data = str_ireplace("RX bytes:", "", $data);
-  $data = str_ireplace("TX bytes:", "", $data);
-  $data = trim($data);
-  $data = explode(" ", $data);
+    $data = shell_exec("/sbin/ifconfig eth0 | grep 'TX packets'");
+    $data = str_ireplace("TX packets:", "", $data);
+    $data = trim($data);
+    $data = explode(" ", $data);
+    $txRaw = $data[5] / 1024 / 1024;
 
-  $rxRaw = $data[0] / 1024 / 1024;
-  $txRaw = $data[4] / 1024 / 1024;
-  $rx = round($rxRaw, 2);
-  $tx = round($txRaw, 2);
-  */
+    $rx = round($rxRaw, 2);
+    $tx = round($txRaw, 2);
+  } 
+  else{
+    $data = shell_exec("/sbin/ifconfig eth0 | grep RX\ bytes");
+    $data = str_ireplace("RX bytes:", "", $data);
+    $data = str_ireplace("TX bytes:", "", $data);
+    $data = trim($data);
+    $data = explode(" ", $data);
 
-  /* after */
-  $data = shell_exec("/sbin/ifconfig eth0 | grep 'RX packets'");
-  $data = str_ireplace("RX packets:", "", $data);
-  $data = trim($data);
-  $data = explode(" ", $data);
-  $rxRaw = $data[5] / 1024 / 1024;
-
-  $data = shell_exec("/sbin/ifconfig eth0 | grep 'TX packets'");
-  $data = str_ireplace("TX packets:", "", $data);
-  $data = trim($data);
-  $data = explode(" ", $data);
-  $txRaw = $data[5] / 1024 / 1024;
-
-  $rx = round($rxRaw, 2);
-  $tx = round($txRaw, 2);
+    $rxRaw = $data[0] / 1024 / 1024;
+    $txRaw = $data[4] / 1024 / 1024;
+    $rx = round($rxRaw, 2);
+    $tx = round($txRaw, 2);
+  }
 
   return array(
     'up' => $tx,

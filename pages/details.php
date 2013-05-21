@@ -16,8 +16,12 @@ $cpu = CPU::cpu();
 $cpu_heat = CPU::heat();
 $hdd = Storage::hdd();
 $net_connections = Network::connections();
-$net_eth = Network::ethernet();
+$net_eth = Network::ethernet(get_linux());
 $users = Users::connected();
+
+function get_linux() {
+  return Rbpi::distribution();
+}
 
 function icon_alert($alert) {
   echo '<i class="icon-';
