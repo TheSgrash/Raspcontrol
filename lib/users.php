@@ -8,7 +8,9 @@ class Users {
 
     $result = array();
 
+    /* Not Used
     $dataRaw = shell_exec("who --ips");
+    */
     $dataRawDNS = shell_exec("who --lookup");
 
     foreach (explode ("\n", $dataRawDNS) as $line) {
@@ -21,7 +23,11 @@ class Users {
     }
 
     $i = 0;
+    /* before
     foreach (explode ("\n", $dataRaw) as $line) {
+    */
+    /* after */
+    foreach (explode ("\n", $dataRawDNS) as $line) {
       $line = preg_replace("/ +/", " ", $line);
 
       if (strlen($line)>0) {
@@ -39,7 +45,7 @@ class Users {
     }
 
     return $result;
-  }   
+  }
 
 }
 
