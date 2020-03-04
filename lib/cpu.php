@@ -4,75 +4,72 @@ namespace lib;
 
 class CPU {
 
-  /**
-   * The number of line which will be shown in the popover
-   */
-  public static $DETAIL_LINE_COUNT = 5;
+    /**
+     * The number of line which will be shown in the popover
+     */
+    public static $DETAIL_LINE_COUNT = 5;
 
+    public static function cpu() {
+		global $ssh;
+        $result = array();
 
-  public static function cpu() {
+        $getLoad = sys_getloadavg();
+        
+        $cpuCurFreq = round($ssh->shell_exec_noauth('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq') / 1000);
+        if($cpuCurFreq==""){
+			$cpuCurFreq = round($ssh->shell_exec_noauth('cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq') / 1000);
+		}
+        $cpuCurFreq .= "MHz";
+        $cpuMinFreq = round($ssh->shell_exec_noauth('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq') / 1000) . "MHz";
+        $cpuMaxFreq = round($ssh->shell_exec_noauth('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq') / 1000) . "MHz";
+        $cpuFreqGovernor = $ssh->shell_exec_noauth('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor');
 
-    $result = array();
+        if ($getLoad[0] > 1)
+            $result['alert'] = 'danger';
+        else
+            $result['alert'] = 'success';
 
-    $getLoad = sys_getloadavg();
-    /* before
-    $cpuCurFreq = round(file_get_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq") / 1000) . "MHz";
-    $cpuMinFreq = round(file_get_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq") / 1000) . "MHz";
-    $cpuMaxFreq = round(file_get_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq") / 1000) . "MHz";
-    $cpuFreqGovernor = file_get_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
-    */
-    /* after */
-    $cpuCurFreq = shell_exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")/1000 . "MHz";
-    $cpuMinFreq = shell_exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq")/1000 . "MHz";
-    $cpuMaxFreq = shell_exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq")/1000 . "MHz";
-    $cpuFreqGovernor = shell_exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+        $result['loads'] = $getLoad[0];
+        $result['loads5'] = $getLoad[1];
+        $result['loads15'] = $getLoad[2];
+        $result['current'] = $cpuCurFreq;
+        $result['min'] = $cpuMinFreq;
+        $result['max'] = $cpuMaxFreq;
+        $result['governor'] = substr($cpuFreqGovernor, 0, -1);
 
-    if ($getLoad[0] > 1)
-      $result['alert'] = 'danger';
-    else
-      $result['alert'] = 'success';
+        return $result;
+    }
 
-    $result['loads'] = $getLoad[0];
-    $result['loads5'] = $getLoad[1];
-    $result['loads15'] = $getLoad[2];
-    $result['current'] = $cpuCurFreq;
-    $result['min'] = $cpuMinFreq;
-    $result['max'] = $cpuMaxFreq;
-    $result['governor'] = substr($cpuFreqGovernor, 0, -1);
+    private static $MaxTemp = 85;
 
-    return $result;
-  }
+    public static function heat() {
+        global $ssh;
+        $result = array();
 
-  private static $MaxTemp = 85;
+        $fh = fopen("/sys/class/thermal/thermal_zone0/temp", 'r');
+        $currenttemp = fgets($fh);
+        fclose($fh);
+		
+		if($currenttemp==""){
+			$currenttemp = $ssh->shell_exec_noauth('cat /sys/class/thermal/thermal_zone0/temp');
+		}
+		
+        $cpuDetails = $ssh->shell_exec_noauth('ps -e -o pcpu,user,args --sort=-pcpu | sed "/^ 0.0 /d" | head -' . self::$DETAIL_LINE_COUNT);
 
-  public static function heat() {
+        $result['degrees'] = round($currenttemp / 1000);
+        $result['percentage'] = round($result['degrees'] / self::$MaxTemp * 100);
+		
+        if ($result['percentage'] >= '80')
+            $result['alert'] = 'danger';
+        elseif ($result['percentage'] >= '60')
+            $result['alert'] = 'warning';
+        else
+            $result['alert'] = 'success';
 
-    $result = array();
+        $result['detail'] = $cpuDetails;
 
-    /* before
-    $fh = fopen("/sys/class/thermal/thermal_zone0/temp", 'r');
-    $currenttemp = fgets($fh);
-    fclose($fh);
-    */
-    /* after */
-    $currenttemp = shell_exec("cat /sys/class/thermal/thermal_zone0/temp");
-
-	$cpuDetails = shell_exec('ps -e -o pcpu,user,args --sort=-pcpu | sed "/^ 0.0 /d" | head -' . self::$DETAIL_LINE_COUNT);
-
-	$result['degrees'] = round($currenttemp / 1000);
-    $result['percentage'] = round($result['degrees'] / self::$MaxTemp * 100);
-
-	if ($result['percentage'] >= '80')
-      $result['alert'] = 'danger';
-    elseif ($result['percentage'] >= '60')
-      $result['alert'] = 'warning';
-    else
-      $result['alert'] = 'success';
-
-	$result['detail'] = $cpuDetails;
-
-	return $result;
-  }
+        return $result;
+    }
 
 }
 

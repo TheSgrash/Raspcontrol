@@ -1,8 +1,8 @@
-    <div class="container">
-      <div class="row-fluid">
+<div class="container">
+    <div class="row-fluid">
         <div class="span6 offset3">
             <h2>Error 404</h2>
-            <p>The document you're looking for doesn't exist.</p>
+            <p>Hai chiesto qualcosa che &egrave; finito in un buco nero.</p>
         </div>
-      </div>
-    </div> <!-- container -->
+    </div>
+</div> <!-- container -->
